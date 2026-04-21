@@ -39,6 +39,8 @@ class RechargeTask(Base):
     pc_year_price: Mapped[Decimal | None] = mapped_column(DECIMAL(10, 2), nullable=True)
 
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), index=True, default=TaskStatus.pending)
+    progress_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    progress_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     fail_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 

@@ -6,7 +6,7 @@ from app.core.response import ok
 from app.db.session import get_db
 from app.models.enums import TaskStatus
 from app.models.recharge_task import RechargeTask
-from app.schemas.task import TaskFailIn, TaskFilter, TaskImportIn, TaskOut, TaskStartIn, TaskSuccessIn
+from app.schemas.task import TaskFailIn, TaskFilter, TaskImportIn, TaskOut, TaskProgressIn, TaskStartIn, TaskSuccessIn
 from app.services.task_service import TaskService
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -101,3 +101,16 @@ def fail_task(task_id: int, payload: TaskFailIn, _: str = WorkerAuth, db: Sessio
         raise HTTPException(status_code=400, detail="task not in processing status for this worker")
     TaskService.fail_task(db, task, payload)
     return ok({"task_id": task_id, "status": "failed"})
+
+
+@router.post("/{task_id}/progress")
+def report_task_progress(task_id: int, payload: TaskProgressIn, _: str = WorkerAuth, db: Session = Depends(get_db)):
+    task = db.get(RechargeTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="task not found")
+    if task.worker_id != payload.worker_id:
+        raise HTTPException(status_code=400, detail="task not assigned to this worker")
+    if task.status not in (TaskStatus.claimed, TaskStatus.processing):
+        raise HTTPException(status_code=400, detail="task not in claimed or processing status")
+    TaskService.update_progress(db, task, payload.worker_id, payload.progress_status)
+    return ok({"task_id": task_id, "progress_status": payload.progress_status})
