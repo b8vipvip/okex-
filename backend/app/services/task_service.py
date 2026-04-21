@@ -106,6 +106,8 @@ class TaskService:
     @staticmethod
     def success_task(db: Session, task: RechargeTask, payload):
         task.status = TaskStatus.success
+        task.progress_status = "充值完成"
+        task.progress_updated_at = datetime.utcnow()
         task.kugou_id = payload.kugou_id
         task.recharge_cost = payload.recharge_cost
         task.validity_value = payload.validity_value
@@ -125,6 +127,7 @@ class TaskService:
         task.profit = (task.sale_price or Decimal("0.00")) - (task.recharge_cost or Decimal("0.00"))
         task.finished_at = datetime.utcnow()
         TaskService._log(db, task.id, "status_change", "processing -> success", payload.worker_id)
+        TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
 
         batch = db.get(TaskBatch, task.source_batch_id)
         if batch:
@@ -135,12 +138,22 @@ class TaskService:
     @staticmethod
     def fail_task(db: Session, task: RechargeTask, payload):
         task.status = TaskStatus.failed
+        task.progress_status = payload.fail_reason or "充值失败"
+        task.progress_updated_at = datetime.utcnow()
         task.fail_code = payload.fail_code
         task.fail_reason = payload.fail_reason
         task.failed_at = datetime.utcnow()
         TaskService._log(db, task.id, "status_change", f"processing -> failed ({payload.fail_code})", payload.worker_id)
+        TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
         batch = db.get(TaskBatch, task.source_batch_id)
         if batch:
             batch.failed_count += 1
             batch.pending_count = max(batch.pending_count - 1, 0)
+        db.commit()
+
+    @staticmethod
+    def update_progress(db: Session, task: RechargeTask, worker_id: str, progress_status: str):
+        task.progress_status = progress_status
+        task.progress_updated_at = datetime.utcnow()
+        TaskService._log(db, task.id, "progress_update", progress_status, worker_id)
         db.commit()
