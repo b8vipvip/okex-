@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DECIMAL, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import DECIMAL, DateTime, Enum, ForeignKey, Index, Integer, String, Text, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -62,3 +62,9 @@ class RechargeTask(Base):
     __table_args__ = (
         Index("idx_task_query_combo", "status", "plan_type", "source_batch_id", "worker_id"),
     )
+
+
+@event.listens_for(RechargeTask.progress_status, "set", retval=False)
+def update_progress_updated_at_on_status_change(target: RechargeTask, value: str | None, oldvalue: str | None, initiator):
+    if value != oldvalue:
+        target.progress_updated_at = datetime.utcnow()

@@ -107,7 +107,6 @@ class TaskService:
     def success_task(db: Session, task: RechargeTask, payload):
         task.status = TaskStatus.success
         task.progress_status = "充值完成"
-        task.progress_updated_at = datetime.utcnow()
         task.kugou_id = payload.kugou_id
         task.recharge_cost = payload.recharge_cost
         task.validity_value = payload.validity_value
@@ -139,7 +138,6 @@ class TaskService:
     def fail_task(db: Session, task: RechargeTask, payload):
         task.status = TaskStatus.failed
         task.progress_status = payload.fail_reason or "充值失败"
-        task.progress_updated_at = datetime.utcnow()
         task.fail_code = payload.fail_code
         task.fail_reason = payload.fail_reason
         task.failed_at = datetime.utcnow()
@@ -154,6 +152,5 @@ class TaskService:
     @staticmethod
     def update_progress(db: Session, task: RechargeTask, worker_id: str, progress_status: str):
         task.progress_status = progress_status
-        task.progress_updated_at = datetime.utcnow()
         TaskService._log(db, task.id, "progress_update", progress_status, worker_id)
         db.commit()

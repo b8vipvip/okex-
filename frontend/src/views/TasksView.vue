@@ -12,11 +12,7 @@
       <el-table-column prop="account_identifier" label="账号"/>
       <el-table-column prop="account_remark" label="备注"/>
       <el-table-column prop="plan_type" label="套餐"/>
-      <el-table-column label="状态">
-        <template #default="{row}">
-          {{ displayStatus(row) }}
-        </template>
-      </el-table-column>
+      <el-table-column label="状态" prop="progress_status"/>
       <el-table-column prop="progress_updated_at" label="状态更新时间" width="170"/>
       <el-table-column prop="sale_price" label="售价"/>
       <el-table-column prop="recharge_cost" label="成本"/>
@@ -41,7 +37,6 @@ const statuses = ['pending','queued','claimed','processing','success','failed','
 const q = reactive({ page: 1, page_size: 20, keyword: '', status: '', batch_id: '' })
 const items = ref([])
 const total = ref(0)
-const displayStatus = (task) => task.progress_status || task.status_text || task.status
 const load = async () => {
   const data = await listTasksApi(q)
   items.value = data.items
