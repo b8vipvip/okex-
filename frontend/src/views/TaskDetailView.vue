@@ -4,7 +4,8 @@
     <el-descriptions :column="2" border>
       <el-descriptions-item label="账号">{{task.account_identifier}}</el-descriptions-item>
       <el-descriptions-item label="备注">{{task.account_remark}}</el-descriptions-item>
-      <el-descriptions-item label="状态">{{task.status}}</el-descriptions-item>
+      <el-descriptions-item label="状态">{{displayStatus(task)}}</el-descriptions-item>
+      <el-descriptions-item label="实时状态更新时间">{{task.progress_updated_at}}</el-descriptions-item>
       <el-descriptions-item label="worker">{{task.worker_id}}</el-descriptions-item>
       <el-descriptions-item label="售价">{{task.sale_price}}</el-descriptions-item>
       <el-descriptions-item label="成本">{{task.recharge_cost}}</el-descriptions-item>
@@ -23,5 +24,6 @@ import { useRoute } from 'vue-router'
 import { getTaskApi } from '../api'
 const route = useRoute()
 const task = ref(null)
+const displayStatus = (taskData) => taskData?.progress_status || taskData?.status_text || taskData?.status
 onMounted(async()=> task.value = await getTaskApi(route.params.id))
 </script>

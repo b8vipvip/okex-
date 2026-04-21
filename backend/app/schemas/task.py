@@ -38,6 +38,8 @@ class TaskOut(ORMBase):
     profit: Decimal
     kugou_id: str | None
     status: TaskStatus
+    progress_status: str | None
+    progress_updated_at: datetime | None
     worker_id: str | None
     uploaded_at: datetime
     started_at: datetime | None
@@ -88,3 +90,8 @@ class TaskFailIn(BaseModel):
     worker_id: str
     fail_code: str
     fail_reason: str
+
+
+class TaskProgressIn(BaseModel):
+    worker_id: str
+    progress_status: str = Field(min_length=1, max_length=100)
