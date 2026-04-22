@@ -110,7 +110,7 @@ python scripts/mock_worker.py
 ## 6. 常见问题排查
 
 1. **前端 401**：检查 localStorage token 是否正确、后端 `.env` 的 `JWT_SECRET` 是否变更。
-2. **claim 报错**：确认 MySQL 8.0，并使用 InnoDB，`SELECT ... FOR UPDATE SKIP LOCKED` 依赖数据库支持。
+2. **claim 报错**：检查数据库连接和事务隔离配置，确保 worker 可通过“查询 queued + 条件更新”方式正常抢占任务。
 3. **跨域问题**：生产使用同域 Nginx 代理；开发环境使用 Vite proxy。
 4. **迁移失败**：检查 `DATABASE_URL` 是否包含 `?charset=utf8mb4`。
 
@@ -119,7 +119,6 @@ python scripts/mock_worker.py
 - UTF-8 txt 导入
 - 去空行、去重复、格式校验
 - 任务状态流转日志
-- 并发安全领取（事务 + `FOR UPDATE SKIP LOCKED`）
+- 并发安全领取（查询最早 queued 任务 + 条件更新重试）
 - 任务分页筛选（默认 id 倒序）
 - 仪表盘统计（销售额/成本/利润）
-
