@@ -19,7 +19,7 @@ def heartbeat(payload: WorkerHeartbeatIn, _: str = WorkerAuth, db: Session = Dep
 
 @router.post("/claim")
 def claim(payload: WorkerClaimIn, _: str = WorkerAuth, db: Session = Depends(get_db)):
-    task = WorkerService.claim_task(db, payload.worker_id)
+    task = WorkerService.claim_task(db, payload.worker_id, payload.task_type)
     if not task:
         return ok(None, message="no queued task")
     return ok(TaskOut.model_validate(task).model_dump())

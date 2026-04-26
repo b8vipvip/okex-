@@ -11,6 +11,7 @@ const routes = [
       { path: '/dashboard', component: () => import('../views/DashboardView.vue') },
       { path: '/import', component: () => import('../views/ImportView.vue') },
       { path: '/tasks', component: () => import('../views/TasksView.vue') },
+      { path: '/prices', component: () => import('../views/PriceListView.vue') },
       { path: '/tasks/:id', component: () => import('../views/TaskDetailView.vue') },
       { path: '/batches', component: () => import('../views/BatchesView.vue') }
     ]

@@ -5,6 +5,7 @@
         <el-menu-item index="/dashboard">仪表盘</el-menu-item>
         <el-menu-item index="/import">批量导入</el-menu-item>
         <el-menu-item index="/tasks">任务列表</el-menu-item>
+        <el-menu-item index="/prices">价格列表</el-menu-item>
         <el-menu-item index="/batches">批次列表</el-menu-item>
       </el-menu>
     </el-aside>

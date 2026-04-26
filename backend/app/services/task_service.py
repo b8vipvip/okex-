@@ -5,7 +5,7 @@ from uuid import uuid4
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.enums import TaskStatus
+from app.models.enums import TaskStatus, TaskType
 from app.models.recharge_task import RechargeTask
 from app.models.task_batch import TaskBatch
 from app.models.task_log import TaskLog
@@ -17,7 +17,7 @@ class TaskService:
         db.add(TaskLog(task_id=task_id, action=action, content=content, worker_id=worker_id))
 
     @staticmethod
-    def import_tasks(db: Session, batch_name: str, plan_type: str, sale_price: Decimal, raw_text: str, uploaded_by: str = "admin"):
+    def import_tasks(db: Session, batch_name: str, plan_type: str, task_type: TaskType, sale_price: Decimal, raw_text: str, uploaded_by: str = "admin"):
         lines = raw_text.splitlines()
         stats = {"total_lines": len(lines), "success_count": 0, "duplicate_count": 0, "format_error_count": 0, "skipped_count": 0}
 
@@ -52,6 +52,7 @@ class TaskService:
                 account_identifier=account_identifier,
                 account_remark=remark,
                 plan_type=plan_type,
+                task_type=task_type,
                 sale_price=sale_price,
                 status=TaskStatus.pending,
                 uploaded_at=datetime.utcnow(),
@@ -95,6 +96,21 @@ class TaskService:
     def get_task(db: Session, task_id: int):
         stmt = select(RechargeTask).options(joinedload(RechargeTask.logs)).where(RechargeTask.id == task_id)
         return db.scalar(stmt)
+
+    @staticmethod
+    def list_latest_price_tasks(db: Session):
+        tasks = db.scalars(
+            select(RechargeTask)
+            .where(RechargeTask.task_type == TaskType.query_price)
+            .order_by(RechargeTask.account_identifier.asc(), RechargeTask.id.desc())
+        ).all()
+
+        latest_by_account: dict[str, RechargeTask] = {}
+        for task in tasks:
+            if task.account_identifier not in latest_by_account:
+                latest_by_account[task.account_identifier] = task
+        return list(latest_by_account.values())
+
 
     @staticmethod
     def start_task(db: Session, task: RechargeTask, worker_id: str):

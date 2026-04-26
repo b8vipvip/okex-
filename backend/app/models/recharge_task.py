@@ -5,7 +5,7 @@ from sqlalchemy import DECIMAL, DateTime, Enum, ForeignKey, Index, Integer, Stri
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import PlanType, TaskStatus
+from app.models.enums import PlanType, TaskStatus, TaskType
 
 
 class RechargeTask(Base):
@@ -18,6 +18,7 @@ class RechargeTask(Base):
     account_remark: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     plan_type: Mapped[PlanType] = mapped_column(Enum(PlanType), index=True)
+    task_type: Mapped[TaskType] = mapped_column(Enum(TaskType), index=True, default=TaskType.recharge)
     sale_price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), default=Decimal("0.00"))
     recharge_cost: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), default=Decimal("0.00"))
     profit: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), default=Decimal("0.00"))

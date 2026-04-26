@@ -6,7 +6,7 @@ from app.core.response import ok
 from app.db.session import get_db
 from app.models.enums import TaskStatus
 from app.models.recharge_task import RechargeTask
-from app.schemas.task import TaskFailIn, TaskFilter, TaskImportIn, TaskOut, TaskProgressIn, TaskStartIn, TaskSuccessIn
+from app.schemas.task import TaskFailIn, TaskFilter, TaskImportIn, TaskOut, TaskPriceOut, TaskProgressIn, TaskStartIn, TaskSuccessIn
 from app.services.task_service import TaskService
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -17,6 +17,7 @@ async def import_tasks(
     batch_name: str = Form(...),
     plan_type: str = Form(...),
     sale_price: str = Form(...),
+    task_type: str = Form("充值"),
     text_content: str = Form(""),
     file: UploadFile | None = File(default=None),
     _: str = AdminUser,
@@ -25,8 +26,8 @@ async def import_tasks(
     file_content = ""
     if file is not None:
         file_content = (await file.read()).decode("utf-8", errors="ignore")
-    payload = TaskImportIn(batch_name=batch_name, plan_type=plan_type, sale_price=sale_price, text_content=text_content or file_content)
-    batch, stats = TaskService.import_tasks(db, payload.batch_name, payload.plan_type, payload.sale_price, payload.text_content)
+    payload = TaskImportIn(batch_name=batch_name, plan_type=plan_type, task_type=task_type, sale_price=sale_price, text_content=text_content or file_content)
+    batch, stats = TaskService.import_tasks(db, payload.batch_name, payload.plan_type, payload.task_type, payload.sale_price, payload.text_content)
     return ok({"batch_id": batch.id, "batch_no": batch.batch_no, **stats})
 
 
@@ -57,6 +58,12 @@ def list_tasks(
     )
     total, items = TaskService.list_tasks(db, query)
     return ok({"total": total, "page": page, "page_size": page_size, "items": [TaskOut.model_validate(x).model_dump() for x in items]})
+
+
+@router.get("/price-list")
+def list_price_tasks(_: str = AdminUser, db: Session = Depends(get_db)):
+    items = TaskService.list_latest_price_tasks(db)
+    return ok([TaskPriceOut.model_validate(x).model_dump() for x in items])
 
 
 @router.get("/{task_id}")
