@@ -1,3 +1,4 @@
+from app.models.enums import TaskType
 from pydantic import BaseModel
 
 
@@ -9,3 +10,4 @@ class WorkerHeartbeatIn(BaseModel):
 
 class WorkerClaimIn(BaseModel):
     worker_id: str
+    task_type: TaskType | None = None

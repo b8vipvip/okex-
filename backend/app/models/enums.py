@@ -7,6 +7,11 @@ class PlanType(str, Enum):
     year = "year"
 
 
+class TaskType(str, Enum):
+    recharge = "充值"
+    query_price = "查询价格"
+
+
 class TaskStatus(str, Enum):
     pending = "pending"
     queued = "queued"

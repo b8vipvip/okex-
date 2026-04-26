@@ -11,6 +11,7 @@
       <el-table-column prop="task_no" label="任务编号" width="180"/>
       <el-table-column prop="account_identifier" label="账号"/>
       <el-table-column prop="account_remark" label="备注"/>
+      <el-table-column prop="task_type" label="任务类型" width="100"/>
       <el-table-column prop="plan_type" label="套餐"/>
       <el-table-column label="状态" prop="progress_status"/>  
       <el-table-column prop="progress_updated_at" label="状态更新时间" width="170"/>

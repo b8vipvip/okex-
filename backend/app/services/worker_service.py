@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.models.enums import TaskStatus
+from app.models.enums import TaskStatus, TaskType
 from app.models.recharge_task import RechargeTask
 from app.models.task_log import TaskLog
 from app.models.worker import Worker
@@ -26,11 +26,14 @@ class WorkerService:
         return worker
 
     @staticmethod
-    def claim_task(db: Session, worker_id: str):
+    def claim_task(db: Session, worker_id: str, task_type: TaskType | None = None):
         for _ in range(WorkerService.CLAIM_RETRY_TIMES):
             task_id = db.scalar(
                 select(RechargeTask.id)
-                .where(RechargeTask.status == TaskStatus.queued)
+                .where(
+                    RechargeTask.status == TaskStatus.queued,
+                    *([RechargeTask.task_type == task_type] if task_type else []),
+                )
                 .order_by(RechargeTask.id.asc())
                 .limit(1)
             )

@@ -3,13 +3,14 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import PlanType, TaskStatus
+from app.models.enums import PlanType, TaskStatus, TaskType
 from app.schemas.common import ORMBase
 
 
 class TaskImportIn(BaseModel):
     batch_name: str = Field(min_length=1, max_length=128)
     plan_type: PlanType
+    task_type: TaskType = TaskType.recharge
     sale_price: Decimal = Field(ge=0)
     text_content: str = ""
 
@@ -33,6 +34,7 @@ class TaskOut(ORMBase):
     account_identifier: str
     account_remark: str | None
     plan_type: PlanType
+    task_type: TaskType
     sale_price: Decimal
     recharge_cost: Decimal
     profit: Decimal
@@ -45,6 +47,21 @@ class TaskOut(ORMBase):
     started_at: datetime | None
     finished_at: datetime | None
     fail_reason: str | None
+
+
+class TaskPriceOut(ORMBase):
+    account_identifier: str
+    account_remark: str | None
+    app_month_price: Decimal | None
+    app_season_price: Decimal | None
+    app_year_price: Decimal | None
+    web_month_price: Decimal | None
+    web_season_price: Decimal | None
+    web_year_price: Decimal | None
+    pc_month_price: Decimal | None
+    pc_season_price: Decimal | None
+    pc_year_price: Decimal | None
+    started_at: datetime | None
 
 
 class TaskLogOut(ORMBase):

@@ -28,3 +28,4 @@ export const listTasksApi = (params = {}) => {
 export const getTaskApi = (id) => request.get(`/api/tasks/${id}`)
 export const listBatchesApi = () => request.get('/api/batches')
 export const getBatchApi = (id) => request.get(`/api/batches/${id}`)
+export const listPriceTasksApi = () => request.get('/api/tasks/price-list')
