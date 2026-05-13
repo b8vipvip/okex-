@@ -16,6 +16,9 @@
       <el-table-column prop="pc_month_price" label="PC月卡"/>
       <el-table-column prop="pc_season_price" label="PC季卡"/>
       <el-table-column prop="pc_year_price" label="PC年卡"/>
+      <el-table-column prop="super_month_price" label="超级月卡"/>
+      <el-table-column prop="app_promo_super_month_price" label="APP特惠超级月卡" min-width="140"/>
+      <el-table-column prop="web_promo_super_month_price" label="WEB特惠超级月卡" min-width="140"/>
       <el-table-column prop="started_at" label="查询时间" width="180"/>
     </el-table>
   </el-card>

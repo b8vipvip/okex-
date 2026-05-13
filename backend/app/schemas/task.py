@@ -73,6 +73,9 @@ class TaskPriceOut(ORMBase):
     pc_month_price: Decimal | None
     pc_season_price: Decimal | None
     pc_year_price: Decimal | None
+    super_month_price: Decimal | None
+    app_promo_super_month_price: Decimal | None
+    web_promo_super_month_price: Decimal | None
     started_at: datetime | None
 
 
@@ -114,6 +117,9 @@ class TaskSuccessIn(BaseModel):
     pc_month_price: OptionalDecimal = None
     pc_season_price: OptionalDecimal = None
     pc_year_price: OptionalDecimal = None
+    super_month_price: OptionalDecimal = None
+    app_promo_super_month_price: OptionalDecimal = None
+    web_promo_super_month_price: OptionalDecimal = None
     progress_status: OptionalStr = Field(default=None, max_length=100)
 
 
