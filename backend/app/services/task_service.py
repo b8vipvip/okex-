@@ -121,14 +121,20 @@ class TaskService:
 
     @staticmethod
     def success_task(db: Session, task: RechargeTask, payload):
+        provided_fields = payload.model_fields_set
+        progress_status = payload.progress_status or ("价格查询完成" if task.task_type == TaskType.query_price else "任务完成")
+
         task.status = TaskStatus.success
-        task.progress_status = "充值完成"
-        
-        task.kugou_id = payload.kugou_id
-        task.recharge_cost = payload.recharge_cost
-        task.validity_value = payload.validity_value
-        task.validity_unit = payload.validity_unit
-        for field in [
+        task.progress_status = progress_status
+        task.fail_code = None
+        task.fail_reason = None
+
+        updatable_fields = [
+            "kugou_id",
+            "validity_value",
+            "validity_unit",
+            "sale_price",
+            "recharge_cost",
             "app_month_price",
             "app_season_price",
             "app_year_price",
@@ -138,9 +144,16 @@ class TaskService:
             "pc_month_price",
             "pc_season_price",
             "pc_year_price",
-        ]:
-            setattr(task, field, getattr(payload, field))
-        task.profit = (task.sale_price or Decimal("0.00")) - (task.recharge_cost or Decimal("0.00"))
+        ]
+        uploaded_data = {}
+        for field in updatable_fields:
+            value = getattr(payload, field)
+            if field in provided_fields and value is not None:
+                setattr(task, field, value)
+                uploaded_data[field] = value
+
+        if task.sale_price is not None and task.recharge_cost is not None:
+            task.profit = task.sale_price - task.recharge_cost
         task.finished_at = datetime.utcnow()
         TaskService._log(db, task.id, "status_change", "processing -> success", payload.worker_id)
         TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
@@ -150,6 +163,13 @@ class TaskService:
             batch.success_count += 1
             batch.pending_count = max(batch.pending_count - 1, 0)
         db.commit()
+        db.refresh(task)
+        return {
+            "status": task.status.value,
+            "progress_status": task.progress_status,
+            **uploaded_data,
+            "profit": task.profit,
+        }
 
     @staticmethod
     def fail_task(db: Session, task: RechargeTask, payload):

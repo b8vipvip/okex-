@@ -95,8 +95,8 @@ def success_task(task_id: int, payload: TaskSuccessIn, _: str = WorkerAuth, db: 
         raise HTTPException(status_code=404, detail="task not found")
     if task.status != TaskStatus.processing or task.worker_id != payload.worker_id:
         raise HTTPException(status_code=400, detail="task not in processing status for this worker")
-    TaskService.success_task(db, task, payload)
-    return ok({"task_id": task_id, "status": "success"})
+    data = TaskService.success_task(db, task, payload)
+    return ok({"task_id": task_id, **data})
 
 
 @router.post("/{task_id}/fail")
