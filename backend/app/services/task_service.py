@@ -144,6 +144,9 @@ class TaskService:
             "pc_month_price",
             "pc_season_price",
             "pc_year_price",
+            "super_month_price",
+            "app_promo_super_month_price",
+            "web_promo_super_month_price",
         ]
         uploaded_data = {}
         for field in updatable_fields:
