@@ -1,10 +1,22 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.models.enums import PlanType, TaskStatus, TaskType
 from app.schemas.common import ORMBase
+
+
+def blank_to_none(value):
+    if isinstance(value, str) and value.strip() == "":
+        return None
+    return value
+
+
+OptionalDecimal = Annotated[Decimal | None, BeforeValidator(blank_to_none), Field(ge=0)]
+OptionalInt = Annotated[int | None, BeforeValidator(blank_to_none)]
+OptionalStr = Annotated[str | None, BeforeValidator(blank_to_none)]
 
 
 class TaskImportIn(BaseModel):
@@ -87,20 +99,22 @@ class TaskStartIn(BaseModel):
 
 
 class TaskSuccessIn(BaseModel):
-    worker_id: str
-    kugou_id: str
-    recharge_cost: Decimal = Field(ge=0)
-    validity_value: int
-    validity_unit: str
-    app_month_price: Decimal | None = None
-    app_season_price: Decimal | None = None
-    app_year_price: Decimal | None = None
-    web_month_price: Decimal | None = None
-    web_season_price: Decimal | None = None
-    web_year_price: Decimal | None = None
-    pc_month_price: Decimal | None = None
-    pc_season_price: Decimal | None = None
-    pc_year_price: Decimal | None = None
+    worker_id: str = Field(min_length=1)
+    kugou_id: OptionalStr = None
+    validity_value: OptionalInt = None
+    validity_unit: OptionalStr = None
+    sale_price: OptionalDecimal = None
+    recharge_cost: OptionalDecimal = None
+    app_month_price: OptionalDecimal = None
+    app_season_price: OptionalDecimal = None
+    app_year_price: OptionalDecimal = None
+    web_month_price: OptionalDecimal = None
+    web_season_price: OptionalDecimal = None
+    web_year_price: OptionalDecimal = None
+    pc_month_price: OptionalDecimal = None
+    pc_season_price: OptionalDecimal = None
+    pc_year_price: OptionalDecimal = None
+    progress_status: OptionalStr = Field(default=None, max_length=100)
 
 
 class TaskFailIn(BaseModel):
