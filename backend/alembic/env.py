@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.core.config import settings
 from app.db.base import Base
 from app.models import *  # noqa
 
@@ -11,6 +12,20 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+
+def get_database_url() -> str:
+    if hasattr(settings, "DATABASE_URL"):
+        return settings.DATABASE_URL
+    return settings.database_url
+
+
+def set_sqlalchemy_url() -> None:
+    # Escape percent signs because alembic.ini values are handled by ConfigParser interpolation.
+    config.set_main_option("sqlalchemy.url", get_database_url().replace("%", "%%"))
+
+
+set_sqlalchemy_url()
 
 
 def run_migrations_offline() -> None:
