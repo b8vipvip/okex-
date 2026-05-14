@@ -101,18 +101,12 @@ class TaskService:
         return db.scalar(stmt)
 
     @staticmethod
-    def list_latest_price_tasks(db: Session):
-        tasks = db.scalars(
+    def list_price_tasks(db: Session):
+        return db.scalars(
             select(RechargeTask)
             .where(RechargeTask.task_type == TaskType.query_price)
-            .order_by(RechargeTask.account_identifier.asc(), RechargeTask.id.desc())
+            .order_by(RechargeTask.started_at.desc(), RechargeTask.id.desc())
         ).all()
-
-        latest_by_account: dict[str, RechargeTask] = {}
-        for task in tasks:
-            if task.account_identifier not in latest_by_account:
-                latest_by_account[task.account_identifier] = task
-        return list(latest_by_account.values())
 
     @staticmethod
     def start_task(db: Session, task: RechargeTask, worker_id: str):
@@ -179,6 +173,44 @@ class TaskService:
             "progress_status": task.progress_status,
             **uploaded_data,
             "profit": task.profit,
+        }
+
+    @staticmethod
+    def update_price_progress(db: Session, task: RechargeTask, payload):
+        provided_fields = payload.model_fields_set
+        updatable_fields = [
+            "kugou_id",
+            "app_month_price",
+            "app_season_price",
+            "app_year_price",
+            "web_month_price",
+            "web_season_price",
+            "web_year_price",
+            "pc_month_price",
+            "pc_season_price",
+            "pc_year_price",
+            "super_month_price",
+            "app_promo_super_month_price",
+            "web_promo_super_month_price",
+            "progress_status",
+        ]
+        updated_data = {}
+        for field in updatable_fields:
+            value = getattr(payload, field)
+            if field in provided_fields and value is not None:
+                setattr(task, field, value)
+                updated_data[field] = value
+
+        current_time = now_cn()
+        task.updated_at = current_time
+        if "progress_status" in updated_data:
+            task.progress_updated_at = current_time
+            TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
+        db.commit()
+        db.refresh(task)
+        return {
+            "status": task.status.value,
+            **updated_data,
         }
 
     @staticmethod

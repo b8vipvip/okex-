@@ -62,6 +62,7 @@ class TaskOut(ORMBase):
 
 
 class TaskPriceOut(ORMBase):
+    task_no: str
     account_identifier: str
     account_remark: str | None
     app_month_price: Decimal | None
@@ -108,6 +109,24 @@ class TaskSuccessIn(BaseModel):
     validity_unit: OptionalStr = None
     sale_price: OptionalDecimal = None
     recharge_cost: OptionalDecimal = None
+    app_month_price: OptionalDecimal = None
+    app_season_price: OptionalDecimal = None
+    app_year_price: OptionalDecimal = None
+    web_month_price: OptionalDecimal = None
+    web_season_price: OptionalDecimal = None
+    web_year_price: OptionalDecimal = None
+    pc_month_price: OptionalDecimal = None
+    pc_season_price: OptionalDecimal = None
+    pc_year_price: OptionalDecimal = None
+    super_month_price: OptionalDecimal = None
+    app_promo_super_month_price: OptionalDecimal = None
+    web_promo_super_month_price: OptionalDecimal = None
+    progress_status: OptionalStr = Field(default=None, max_length=100)
+
+
+class TaskPriceProgressIn(BaseModel):
+    worker_id: str = Field(min_length=1)
+    kugou_id: OptionalStr = None
     app_month_price: OptionalDecimal = None
     app_season_price: OptionalDecimal = None
     app_year_price: OptionalDecimal = None

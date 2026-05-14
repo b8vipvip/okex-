@@ -6,7 +6,17 @@ from app.core.response import ok
 from app.db.session import get_db
 from app.models.enums import TaskStatus
 from app.models.recharge_task import RechargeTask
-from app.schemas.task import TaskFailIn, TaskFilter, TaskImportIn, TaskOut, TaskPriceOut, TaskProgressIn, TaskStartIn, TaskSuccessIn
+from app.schemas.task import (
+    TaskFailIn,
+    TaskFilter,
+    TaskImportIn,
+    TaskOut,
+    TaskPriceOut,
+    TaskPriceProgressIn,
+    TaskProgressIn,
+    TaskStartIn,
+    TaskSuccessIn,
+)
 from app.services.task_service import TaskService
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -62,7 +72,7 @@ def list_tasks(
 
 @router.get("/price-list")
 def list_price_tasks(_: str = AdminUser, db: Session = Depends(get_db)):
-    items = TaskService.list_latest_price_tasks(db)
+    items = TaskService.list_price_tasks(db)
     return ok([TaskPriceOut.model_validate(x).model_dump() for x in items])
 
 
@@ -96,6 +106,22 @@ def success_task(task_id: int, payload: TaskSuccessIn, _: str = WorkerAuth, db: 
     if task.status != TaskStatus.processing or task.worker_id != payload.worker_id:
         raise HTTPException(status_code=400, detail="task not in processing status for this worker")
     data = TaskService.success_task(db, task, payload)
+    return ok({"task_id": task_id, **data})
+
+
+@router.post("/{task_id}/price-progress")
+def update_task_price_progress(
+    task_id: int,
+    payload: TaskPriceProgressIn,
+    _: str = WorkerAuth,
+    db: Session = Depends(get_db),
+):
+    task = db.get(RechargeTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="task not found")
+    if task.status != TaskStatus.processing or task.worker_id != payload.worker_id:
+        raise HTTPException(status_code=400, detail="task not in processing status for this worker")
+    data = TaskService.update_price_progress(db, task, payload)
     return ok({"task_id": task_id, **data})
 
 
