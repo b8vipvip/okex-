@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import Header, HTTPException, status
 from jose import JWTError, jwt
 
 from app.core.config import settings
+from app.utils.time import CN_TZ
 
 
 async def admin_auth(authorization: str | None = Header(default=None)) -> str:
@@ -26,7 +27,7 @@ async def worker_auth(x_api_key: str | None = Header(default=None)) -> str:
 
 
 def create_access_token(username: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire = datetime.now(CN_TZ) + timedelta(minutes=settings.access_token_expire_minutes)
     payload = {"sub": username, "exp": expire}
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
