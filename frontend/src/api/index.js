@@ -18,6 +18,10 @@ export const listTasksApi = (params = {}) => {
     cleanedParams.status = params.status
   }
 
+  if (params.task_type !== '' && params.task_type != null) {
+    cleanedParams.task_type = params.task_type
+  }
+
   if (params.batch_id !== '' && params.batch_id != null) {
     cleanedParams.batch_id = params.batch_id
   }
@@ -28,4 +32,12 @@ export const listTasksApi = (params = {}) => {
 export const getTaskApi = (id) => request.get(`/api/tasks/${id}`)
 export const listBatchesApi = () => request.get('/api/batches')
 export const getBatchApi = (id) => request.get(`/api/batches/${id}`)
-export const listPriceTasksApi = () => request.get('/api/tasks/price-list')
+export const updateTasksApi = (data) => request.patch('/api/tasks/batch', data)
+
+export const listPriceTasksApi = (params = {}) => {
+  const cleanedParams = {}
+  ;['keyword', 'status', 'task_type'].forEach((key) => {
+    if (params[key] !== '' && params[key] != null) cleanedParams[key] = params[key]
+  })
+  return request.get('/api/tasks/price-list', { params: cleanedParams })
+}

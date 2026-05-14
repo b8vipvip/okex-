@@ -15,8 +15,10 @@ def blank_to_none(value):
 
 
 OptionalDecimal = Annotated[Decimal | None, BeforeValidator(blank_to_none), Field(ge=0)]
+OptionalProfit = Annotated[Decimal | None, BeforeValidator(blank_to_none)]
 OptionalInt = Annotated[int | None, BeforeValidator(blank_to_none)]
 OptionalStr = Annotated[str | None, BeforeValidator(blank_to_none)]
+OptionalDateTime = Annotated[datetime | None, BeforeValidator(blank_to_none)]
 
 
 class TaskImportIn(BaseModel):
@@ -32,6 +34,7 @@ class TaskFilter(BaseModel):
     page_size: int = 20
     status: TaskStatus | None = None
     plan_type: PlanType | None = None
+    task_type: TaskType | None = None
     batch_id: int | None = None
     worker_id: str | None = None
     keyword: str | None = None
@@ -63,6 +66,8 @@ class TaskOut(ORMBase):
 
 class TaskPriceOut(ORMBase):
     task_no: str
+    task_type: TaskType
+    status: TaskStatus
     account_identifier: str
     account_remark: str | None
     app_month_price: Decimal | None
@@ -78,6 +83,52 @@ class TaskPriceOut(ORMBase):
     app_promo_super_month_price: Decimal | None
     web_promo_super_month_price: Decimal | None
     started_at: datetime | None
+
+
+class TaskAdminUpdateIn(BaseModel):
+    task_no: OptionalStr = Field(default=None, max_length=64)
+    source_batch_id: OptionalInt = None
+    account_identifier: OptionalStr = Field(default=None, max_length=128)
+    account_remark: OptionalStr = Field(default=None, max_length=255)
+    plan_type: PlanType | None = None
+    task_type: TaskType | None = None
+    sale_price: OptionalDecimal = None
+    recharge_cost: OptionalDecimal = None
+    profit: OptionalProfit = None
+    kugou_id: OptionalStr = Field(default=None, max_length=128)
+    validity_value: OptionalInt = None
+    validity_unit: OptionalStr = Field(default=None, max_length=16)
+    app_month_price: OptionalDecimal = None
+    app_season_price: OptionalDecimal = None
+    app_year_price: OptionalDecimal = None
+    web_month_price: OptionalDecimal = None
+    web_season_price: OptionalDecimal = None
+    web_year_price: OptionalDecimal = None
+    pc_month_price: OptionalDecimal = None
+    pc_season_price: OptionalDecimal = None
+    pc_year_price: OptionalDecimal = None
+    super_month_price: OptionalDecimal = None
+    app_promo_super_month_price: OptionalDecimal = None
+    web_promo_super_month_price: OptionalDecimal = None
+    status: TaskStatus | None = None
+    progress_status: OptionalStr = Field(default=None, max_length=100)
+    progress_updated_at: OptionalDateTime = None
+    fail_code: OptionalStr = Field(default=None, max_length=64)
+    fail_reason: OptionalStr = None
+    uploaded_at: OptionalDateTime = None
+    queued_at: OptionalDateTime = None
+    claimed_at: OptionalDateTime = None
+    started_at: OptionalDateTime = None
+    finished_at: OptionalDateTime = None
+    failed_at: OptionalDateTime = None
+    created_at: OptionalDateTime = None
+    worker_id: OptionalStr = Field(default=None, max_length=64)
+    retry_count: OptionalInt = None
+
+
+class TaskBatchUpdateIn(BaseModel):
+    task_ids: list[int] = Field(min_length=1)
+    updates: TaskAdminUpdateIn
 
 
 class TaskLogOut(ORMBase):

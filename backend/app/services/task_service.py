@@ -79,6 +79,8 @@ class TaskService:
             stmt = stmt.where(RechargeTask.status == query.status)
         if query.plan_type:
             stmt = stmt.where(RechargeTask.plan_type == query.plan_type)
+        if query.task_type:
+            stmt = stmt.where(RechargeTask.task_type == query.task_type)
         if query.batch_id:
             stmt = stmt.where(RechargeTask.source_batch_id == query.batch_id)
         if query.worker_id:
@@ -101,12 +103,88 @@ class TaskService:
         return db.scalar(stmt)
 
     @staticmethod
-    def list_price_tasks(db: Session):
-        return db.scalars(
-            select(RechargeTask)
-            .where(RechargeTask.task_type == TaskType.query_price)
-            .order_by(RechargeTask.started_at.desc(), RechargeTask.id.desc())
-        ).all()
+    def list_price_tasks(db: Session, query):
+        stmt = select(RechargeTask)
+        if query.status:
+            stmt = stmt.where(RechargeTask.status == query.status)
+        if query.task_type:
+            stmt = stmt.where(RechargeTask.task_type == query.task_type)
+        if query.keyword:
+            kw = f"%{query.keyword}%"
+            stmt = stmt.where(or_(RechargeTask.task_no.like(kw), RechargeTask.account_identifier.like(kw), RechargeTask.account_remark.like(kw), RechargeTask.kugou_id.like(kw)))
+        return db.scalars(stmt.order_by(RechargeTask.started_at.desc(), RechargeTask.id.desc())).all()
+
+    @staticmethod
+    def update_tasks(db: Session, task_ids: list[int], updates):
+        provided_fields = updates.model_fields_set
+        if not provided_fields:
+            return []
+
+        editable_fields = {
+            "task_no",
+            "source_batch_id",
+            "account_identifier",
+            "account_remark",
+            "plan_type",
+            "task_type",
+            "sale_price",
+            "recharge_cost",
+            "profit",
+            "kugou_id",
+            "validity_value",
+            "validity_unit",
+            "app_month_price",
+            "app_season_price",
+            "app_year_price",
+            "web_month_price",
+            "web_season_price",
+            "web_year_price",
+            "pc_month_price",
+            "pc_season_price",
+            "pc_year_price",
+            "super_month_price",
+            "app_promo_super_month_price",
+            "web_promo_super_month_price",
+            "status",
+            "progress_status",
+            "progress_updated_at",
+            "fail_code",
+            "fail_reason",
+            "uploaded_at",
+            "queued_at",
+            "claimed_at",
+            "started_at",
+            "finished_at",
+            "failed_at",
+            "created_at",
+            "worker_id",
+            "retry_count",
+        }
+        fields_to_update = [field for field in provided_fields if field in editable_fields]
+        if not fields_to_update:
+            return []
+
+        non_nullable_fields = {"task_no", "source_batch_id", "account_identifier", "plan_type", "task_type", "sale_price", "recharge_cost", "profit", "status", "uploaded_at", "created_at", "retry_count"}
+        current_time = now_cn()
+        tasks = db.scalars(select(RechargeTask).where(RechargeTask.id.in_(task_ids))).all()
+        if "task_no" in fields_to_update and len(tasks) > 1:
+            fields_to_update.remove("task_no")
+        for task in tasks:
+            applied_fields = []
+            for field in fields_to_update:
+                value = getattr(updates, field)
+                if field in non_nullable_fields and value is None:
+                    continue
+                setattr(task, field, value)
+                applied_fields.append(field)
+            if ({"sale_price", "recharge_cost"} & set(applied_fields)) and "profit" not in applied_fields and task.sale_price is not None and task.recharge_cost is not None:
+                task.profit = task.sale_price - task.recharge_cost
+            task.updated_at = current_time
+            TaskService._log(db, task.id, "admin_update", f"updated fields: {', '.join(applied_fields)}", "admin")
+        db.commit()
+        for task in tasks:
+            db.refresh(task)
+        return tasks
 
     @staticmethod
     def start_task(db: Session, task: RechargeTask, worker_id: str):
