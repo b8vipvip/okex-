@@ -1,12 +1,11 @@
-from datetime import datetime
-
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models.enums import TaskStatus, TaskType
 from app.models.recharge_task import RechargeTask
 from app.models.task_log import TaskLog
 from app.models.worker import Worker
+from app.utils.time import now_cn
 
 
 class WorkerService:
@@ -21,7 +20,9 @@ class WorkerService:
         worker.worker_name = worker_name or worker.worker_name
         worker.status = "online"
         worker.concurrency_limit = concurrency_limit
-        worker.last_heartbeat_at = datetime.utcnow()
+        current_time = now_cn()
+        worker.last_heartbeat_at = current_time
+        worker.updated_at = current_time
         db.commit()
         return worker
 
@@ -41,10 +42,11 @@ class WorkerService:
                 db.rollback()
                 return None
 
+            current_time = now_cn()
             claim_result = db.execute(
                 update(RechargeTask)
                 .where(RechargeTask.id == task_id, RechargeTask.status == TaskStatus.queued)
-                .values(status=TaskStatus.claimed, worker_id=worker_id, claimed_at=func.now())
+                .values(status=TaskStatus.claimed, worker_id=worker_id, claimed_at=current_time, updated_at=current_time)
             )
 
             if claim_result.rowcount == 1:

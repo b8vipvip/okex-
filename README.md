@@ -127,3 +127,40 @@ python scripts/mock_worker.py
 ## 8. 代码修改简要记录
 
 - 2026-04-26：新增任务类型（充值/查询价格）贯通后端导入、领取和前端导入/任务列表；新增价格列表页面；批量名称支持按时间自动生成并可手工修改。
+- 2026-05-14：统一后端业务时间为北京时间无时区 `datetime`：新增 `now_cn()`，任务导入、领取、开始、成功、失败、进度更新以及模型 `created_at`/`updated_at` 默认值均不再使用 UTC 或数据库 `NOW()`；Alembic 仍从项目配置/`.env` 读取 `DATABASE_URL`，未在 `alembic.ini` 写死密码。
+
+## 9. 数据库时间验证与重启
+
+本项目后端业务时间统一使用北京时间无时区 `datetime` 写入 MySQL 5.7 的 `DATETIME` 字段，避免 UTC 与北京时间混用。
+
+### 9.1 重启后端服务
+
+生产环境 systemd：
+
+```bash
+sudo systemctl restart recharge-api
+sudo systemctl status recharge-api
+```
+
+本地开发环境：停止当前 `uvicorn` 进程后重新启动：
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 9.2 验证新任务时间
+
+1. 导入一批新任务并让 worker 完成一次领取/开始/成功或失败流程。
+2. 在 MySQL 中对比业务字段与北京时间：
+
+```sql
+SELECT NOW() AS mysql_now, UTC_TIMESTAMP() AS mysql_utc;
+SELECT task_no, queued_at, claimed_at, started_at, finished_at, failed_at, created_at, updated_at, progress_updated_at
+FROM recharge_tasks
+ORDER BY id DESC
+LIMIT 5;
+```
+
+预期：`queued_at`、`claimed_at`、`started_at`、`finished_at`、`failed_at`、`created_at`、`updated_at`、`progress_updated_at` 等新写入字段与 `NOW()` 同为北京时间，不应再比北京时间少 8 小时。

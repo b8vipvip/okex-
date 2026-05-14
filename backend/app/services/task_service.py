@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -9,6 +8,7 @@ from app.models.enums import TaskStatus, TaskType
 from app.models.recharge_task import RechargeTask
 from app.models.task_batch import TaskBatch
 from app.models.task_log import TaskLog
+from app.utils.time import now_cn
 
 
 class TaskService:
@@ -21,8 +21,9 @@ class TaskService:
         lines = raw_text.splitlines()
         stats = {"total_lines": len(lines), "success_count": 0, "duplicate_count": 0, "format_error_count": 0, "skipped_count": 0}
 
+        import_time = now_cn()
         batch = TaskBatch(
-            batch_no=f"B{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{str(uuid4())[:4]}",
+            batch_no=f"B{import_time.strftime('%Y%m%d%H%M%S')}{str(uuid4())[:4]}",
             batch_name=batch_name,
             uploaded_by=uploaded_by,
         )
@@ -46,8 +47,9 @@ class TaskService:
                 stats["duplicate_count"] += 1
                 continue
             seen.add(key)
+            current_time = now_cn()
             task = RechargeTask(
-                task_no=f"T{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{str(uuid4())[:8]}",
+                task_no=f"T{current_time.strftime('%Y%m%d%H%M%S')}{str(uuid4())[:8]}",
                 source_batch_id=batch.id,
                 account_identifier=account_identifier,
                 account_remark=remark,
@@ -55,13 +57,14 @@ class TaskService:
                 task_type=task_type,
                 sale_price=sale_price,
                 status=TaskStatus.pending,
-                uploaded_at=datetime.utcnow(),
+                uploaded_at=current_time,
             )
             db.add(task)
             db.flush()
             TaskService._log(db, task.id, "status_change", "pending -> queued")
             task.status = TaskStatus.queued
-            task.queued_at = datetime.utcnow()
+            task.queued_at = current_time
+            task.updated_at = current_time
             stats["success_count"] += 1
 
         batch.total_count = stats["success_count"]
@@ -111,11 +114,12 @@ class TaskService:
                 latest_by_account[task.account_identifier] = task
         return list(latest_by_account.values())
 
-
     @staticmethod
     def start_task(db: Session, task: RechargeTask, worker_id: str):
+        current_time = now_cn()
         task.status = TaskStatus.processing
-        task.started_at = datetime.utcnow()
+        task.started_at = current_time
+        task.updated_at = current_time
         TaskService._log(db, task.id, "status_change", "claimed -> processing", worker_id)
         db.commit()
 
@@ -157,7 +161,10 @@ class TaskService:
 
         if task.sale_price is not None and task.recharge_cost is not None:
             task.profit = task.sale_price - task.recharge_cost
-        task.finished_at = datetime.utcnow()
+        current_time = now_cn()
+        task.finished_at = current_time
+        task.updated_at = current_time
+        task.progress_updated_at = current_time
         TaskService._log(db, task.id, "status_change", "processing -> success", payload.worker_id)
         TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
 
@@ -178,10 +185,13 @@ class TaskService:
     def fail_task(db: Session, task: RechargeTask, payload):
         task.status = TaskStatus.failed
         task.progress_status = payload.fail_reason or "充值失败"
-        
+
         task.fail_code = payload.fail_code
         task.fail_reason = payload.fail_reason
-        task.failed_at = datetime.utcnow()
+        current_time = now_cn()
+        task.failed_at = current_time
+        task.updated_at = current_time
+        task.progress_updated_at = current_time
         TaskService._log(db, task.id, "status_change", f"processing -> failed ({payload.fail_code})", payload.worker_id)
         TaskService._log(db, task.id, "progress_update", task.progress_status, payload.worker_id)
         batch = db.get(TaskBatch, task.source_batch_id)
@@ -192,7 +202,10 @@ class TaskService:
 
     @staticmethod
     def update_progress(db: Session, task: RechargeTask, worker_id: str, progress_status: str):
+        current_time = now_cn()
         task.progress_status = progress_status
-       
+        task.updated_at = current_time
+        task.progress_updated_at = current_time
+
         TaskService._log(db, task.id, "progress_update", progress_status, worker_id)
         db.commit()

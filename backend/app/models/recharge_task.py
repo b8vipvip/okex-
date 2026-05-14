@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.enums import PlanType, TaskStatus, TaskType
+from app.utils.time import now_cn
 
 
 class RechargeTask(Base):
@@ -49,7 +50,7 @@ class RechargeTask(Base):
     fail_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     fail_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=now_cn)
     queued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -58,8 +59,8 @@ class RechargeTask(Base):
 
     worker_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_cn)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now_cn, onupdate=now_cn)
 
     batch = relationship("TaskBatch", back_populates="tasks")
     logs = relationship("TaskLog", back_populates="task", cascade="all, delete-orphan")
@@ -72,4 +73,4 @@ class RechargeTask(Base):
 @event.listens_for(RechargeTask.progress_status, "set", retval=False)
 def update_progress_updated_at_on_status_change(target: RechargeTask, value: str | None, oldvalue: str | None, initiator):
     if value != oldvalue:
-        target.progress_updated_at = datetime.utcnow()
+        target.progress_updated_at = now_cn()

@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.utils.time import now_cn
 
 
 class TaskBatch(Base):
@@ -17,7 +18,7 @@ class TaskBatch(Base):
     failed_count: Mapped[int] = mapped_column(Integer, default=0)
     pending_count: Mapped[int] = mapped_column(Integer, default=0)
     uploaded_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_cn)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now_cn, onupdate=now_cn)
 
     tasks = relationship("RechargeTask", back_populates="batch")
