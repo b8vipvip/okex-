@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from app.api.deps import AdminUser, WorkerAuth
 from app.core.response import ok
 from app.db.session import get_db
-from app.models.enums import TaskStatus
+from app.models.enums import TaskStatus, TaskType
 from app.models.recharge_task import RechargeTask
 from app.schemas.task import (
+    TaskBatchUpdateIn,
     TaskFailIn,
     TaskFilter,
     TaskImportIn,
@@ -47,6 +48,7 @@ def list_tasks(
     page_size: int = 20,
     status: TaskStatus | None = None,
     plan_type: str | None = None,
+    task_type: TaskType | None = None,
     batch_id: int | None = None,
     worker_id: str | None = None,
     keyword: str | None = None,
@@ -60,6 +62,7 @@ def list_tasks(
         page_size=page_size,
         status=status,
         plan_type=plan_type,
+        task_type=task_type,
         batch_id=batch_id,
         worker_id=worker_id,
         keyword=keyword,
@@ -71,9 +74,22 @@ def list_tasks(
 
 
 @router.get("/price-list")
-def list_price_tasks(_: str = AdminUser, db: Session = Depends(get_db)):
-    items = TaskService.list_price_tasks(db)
+def list_price_tasks(
+    keyword: str | None = None,
+    status: TaskStatus | None = None,
+    task_type: TaskType | None = None,
+    _: str = AdminUser,
+    db: Session = Depends(get_db),
+):
+    query = TaskFilter(keyword=keyword, status=status, task_type=task_type)
+    items = TaskService.list_price_tasks(db, query)
     return ok([TaskPriceOut.model_validate(x).model_dump() for x in items])
+
+
+@router.patch("/batch")
+def update_tasks(payload: TaskBatchUpdateIn, _: str = AdminUser, db: Session = Depends(get_db)):
+    tasks = TaskService.update_tasks(db, payload.task_ids, payload.updates)
+    return ok({"updated_count": len(tasks), "items": [TaskOut.model_validate(x).model_dump() for x in tasks]})
 
 
 @router.get("/{task_id}")
