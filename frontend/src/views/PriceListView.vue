@@ -1,10 +1,11 @@
 <template>
   <el-card>
     <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-      <b>账号最新价格列表（查询价格任务）</b>
+      <b>账号价格查询记录（查询价格任务）</b>
       <el-button @click="load">刷新</el-button>
     </div>
-    <el-table :data="items" stripe>
+    <el-table :data="items" stripe row-key="task_no">
+      <el-table-column prop="task_no" label="任务编号" width="200"/>
       <el-table-column prop="account_identifier" label="账号" width="180"/>
       <el-table-column prop="account_remark" label="密码" width="160"/>
       <el-table-column prop="app_month_price" label="APP月卡"/>
